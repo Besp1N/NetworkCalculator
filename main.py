@@ -13,7 +13,8 @@ def isStart():
 
 
 root = tk.Tk()
-root.title("Wielki Projekt")
+root.title("Wielki projekt obliczania sieci!")
+root.geometry("1200x590")
 root.resizable(False, False)
 
 frame = tk.Frame(root, bg="white", width=201, height=198)
