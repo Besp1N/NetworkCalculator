@@ -83,7 +83,10 @@ def on_calculate():
             result_label.config(text="Nieprawidlowa maska")
         else:
             result = getResultIpV4(ipValue, maskValue)
-            result_label.config(text=f"{result['network_address']}")
+            result_label.config(text=f"Adres sieci to: {result['network_address']}\n"
+                                     f"Adres rozgloszeniowy to: {result['broadcast_address']}\n"
+                                     f"Klasa sieci to: {result['ipv4_class']}")
+
     else:
         getResultIpV6(ipValue)
 
