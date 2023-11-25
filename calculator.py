@@ -86,16 +86,19 @@ def on_calculate():
             result_label.config(text=f"Adres sieci to: {result['network_address']}\n"
                                      f"Adres rozgloszeniowy to: {result['broadcast_address']}\n"
                                      f"Klasa sieci to: {result['ipv4_class']}")
-
     else:
-        getResultIpV6(ipValue)
+        if not validate_ipv6(ipValue):
+            result_label.config(text="Niepoprawny adkres ipv6")
+        else:
+            result = getResultIpV6(ipValue)
+            result_label.config(text=f"Skrocona wersja ipv6 to: {result['ipv6']}")
 
 
 def getResultIpV4(ipValue, maskValue):
     ipv4Class = ""
     intIpAddress = list()
     ipAddress = ipValue.strip().split('.')
-    maskInBinaryInt = list()
+    maskIntArray = list()
     networkAddress = list()
     broadcastAddress = list()
 
@@ -109,16 +112,16 @@ def getResultIpV4(ipValue, maskValue):
         ipv4Class = get_ipv4_class(ipValue)
 
     if maskValue[0] == "/":
-        maskInBinaryString = (cidr_to_string[maskValue]).strip().split('.')
+        maskStringArray = (cidr_to_string[maskValue]).strip().split('.')
     else:
-        maskInBinaryString = maskValue.strip().split('.')
+        maskStringArray = maskValue.strip().split('.')
 
     for i in range(4):
-        maskInBinaryInt.append(int(maskInBinaryString[i]))
+        maskIntArray.append(int(maskStringArray[i]))
         intIpAddress.append(int(ipAddress[i]))
 
     binaryIpAddress = [bin(int(octet))[2:].zfill(8) for octet in intIpAddress]
-    binaryMask = [bin(octet)[2:].zfill(8) for octet in maskInBinaryInt]
+    binaryMask = [bin(octet)[2:].zfill(8) for octet in maskIntArray]
 
     for i in range(4):
         inverted_mask = 255 - int(binaryMask[i], 2)
@@ -136,15 +139,6 @@ def getResultIpV4(ipValue, maskValue):
     ipv4_result["network_address"] = decimal_network_addressString
     ipv4_result["ipv4_class"] = ipv4Class
     return ipv4_result
-
-
-def checkIpV4Address(ipv4):
-    if ipv4[0] != 0 and len(ipv4) == 4:
-        for i in range(4):
-            if not (0 <= ipv4[i] <= 255):
-                return False
-        return True
-    return False
 
 
 def checkMask(mask):
@@ -172,7 +166,9 @@ def checkMask(mask):
 
 def getResultIpV6(ipValue):
     ipv6String = ipValue.strip().split(":")
-    result = ""
+    result = {
+        "ipv6": ""
+    }
     ipv6OutPut = ""
     for i, hextet in enumerate(ipv6String):
         if hextet == "0000":
@@ -184,8 +180,16 @@ def getResultIpV6(ipValue):
             ipv6OutPut = ipv6OutPut + ipv6String[i]
         else:
             ipv6OutPut = ipv6OutPut + ipv6String[i] + ":"
-    result = f"Skrocony ipv6 to: {ipv6OutPut}"
-    result_label.config(text=result)
+    result['ipv6'] = ipv6OutPut
+    return result
+
+
+def validate_ipv6(ip):
+    try:
+        socket.inet_pton(socket.AF_INET6, ip)
+        return True
+    except socket.error:
+        return False
 
 
 root = tk.Tk()
