@@ -1,4 +1,5 @@
 import tkinter as tk
+import socket
 
 cidr_to_string = {
     "/0": "0.0.0.0",
@@ -44,6 +45,14 @@ def onRadioSelect():
         mask_entry.config(state="normal")
 
 
+def validate_ipv4(ip):
+    try:
+        socket.inet_pton(socket.AF_INET, ip)
+        return True
+    except socket.error:
+        return False
+
+
 def get_ipv4_class(ip_address):
     first_octet = int(ip_address.split('.')[0])
 
@@ -66,13 +75,20 @@ def on_calculate():
     ipValue = entry.get()
     maskValue = mask_entry.get()
     if ipv_type.get() == 4:
-        getResultIpV4(ipValue, maskValue)
+        if not validate_ipv4(ipValue) and not checkMask(maskValue):
+            result_label.config(text="Nieprawidlowy adres IP i maska")
+        elif not validate_ipv4(ipValue):
+            result_label.config(text="Neprawidlowy adres IP")
+        elif not checkMask(maskValue):
+            result_label.config(text="Nieprawidlowa maska")
+        else:
+            result = getResultIpV4(ipValue, maskValue)
+            result_label.config(text=f"{result['network_address']}")
     else:
         getResultIpV6(ipValue)
 
 
 def getResultIpV4(ipValue, maskValue):
-    result = ""
     ipv4Class = ""
     intIpAddress = list()
     ipAddress = ipValue.strip().split('.')
@@ -80,10 +96,11 @@ def getResultIpV4(ipValue, maskValue):
     networkAddress = list()
     broadcastAddress = list()
 
-    if ipValue == "" or maskValue == "":
-        result = "Blad w aplikacji"
-        result_label.config(text=result)
-        return
+    ipv4_result = {
+        "broadcast_address": "",
+        "network_address": "",
+        "ipv4_class": ""
+    }
 
     if get_ipv4_class(ipValue) != "Invalid IP address":
         ipv4Class = get_ipv4_class(ipValue)
@@ -97,27 +114,25 @@ def getResultIpV4(ipValue, maskValue):
         maskInBinaryInt.append(int(maskInBinaryString[i]))
         intIpAddress.append(int(ipAddress[i]))
 
-    if checkIpV4Address(intIpAddress) or checkMask(maskValue):
-        binaryIpAddress = [bin(int(octet))[2:].zfill(8) for octet in intIpAddress]
-        binaryMask = [bin(octet)[2:].zfill(8) for octet in maskInBinaryInt]
+    binaryIpAddress = [bin(int(octet))[2:].zfill(8) for octet in intIpAddress]
+    binaryMask = [bin(octet)[2:].zfill(8) for octet in maskInBinaryInt]
 
-        for i in range(4):
-            inverted_mask = 255 - int(binaryMask[i], 2)
-            broadcast_octet = int(binaryIpAddress[i], 2) | inverted_mask
-            broadcastAddress.append(bin(broadcast_octet)[2:].zfill(8))
-            network_octet = int(binaryMask[i], 2) & int(binaryIpAddress[i], 2)
-            networkAddress.append(bin(network_octet)[2:].zfill(8))
-        decimal_broadcast_address = [str(int(part, 2)) for part in broadcastAddress]
-        decimal_network_address = [str(int(part, 2)) for part in networkAddress]
+    for i in range(4):
+        inverted_mask = 255 - int(binaryMask[i], 2)
+        broadcast_octet = int(binaryIpAddress[i], 2) | inverted_mask
+        broadcastAddress.append(bin(broadcast_octet)[2:].zfill(8))
+        network_octet = int(binaryMask[i], 2) & int(binaryIpAddress[i], 2)
+        networkAddress.append(bin(network_octet)[2:].zfill(8))
 
-        decimal_network_addressString = ".".join(decimal_network_address)
-        decimal_broadcast_addressString = ".".join(decimal_broadcast_address)
-        result = (f"Adres sieci to: {decimal_network_addressString}\nAdres rozgloszeniowy to: {decimal_broadcast_addressString}\n"
-                  f"Klasa IPv4 to: {ipv4Class}")
-    else:
-        result = f"Adres IP lub maska jest nieprawidlowa"
+    decimal_broadcast_address = [str(int(part, 2)) for part in broadcastAddress]
+    decimal_network_address = [str(int(part, 2)) for part in networkAddress]
 
-    result_label.config(text=result)
+    decimal_network_addressString = ".".join(decimal_network_address)
+    decimal_broadcast_addressString = ".".join(decimal_broadcast_address)
+    ipv4_result["broadcast_address"] = decimal_broadcast_addressString
+    ipv4_result["network_address"] = decimal_network_addressString
+    ipv4_result["ipv4_class"] = ipv4Class
+    return ipv4_result
 
 
 def checkIpV4Address(ipv4):
@@ -130,9 +145,12 @@ def checkIpV4Address(ipv4):
 
 
 def checkMask(mask):
-    if mask[0] == "/":
-        cidr = int(mask[1:])
-        return 0 <= cidr <= 32  # Sprawdzenie poprawności CIDR
+    if mask.startswith("/"):
+        try:
+            cidr = int(mask[1:])
+            return 0 <= cidr <= 32  # Sprawdzenie poprawności CIDR
+        except ValueError:
+            return False
     else:
         parts = mask.split('.')
         if len(parts) != 4:
