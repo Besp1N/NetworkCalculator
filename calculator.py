@@ -70,6 +70,13 @@ def get_ipv4_class(ip_address):
         return "Invalid IP address"
 
 
+def getIpv4Hosts(mask):
+    binaryMask = "".join(mask)
+    zeros = binaryMask.count("0")
+    hosts = pow(2, zeros) - 2
+    return hosts
+
+
 def on_calculate():
     global ipv_type
     ipValue = entry.get()
@@ -85,7 +92,8 @@ def on_calculate():
             result = getResultIpV4(ipValue, maskValue)
             result_label.config(text=f"Adres sieci to: {result['network_address']}\n"
                                      f"Adres rozgloszeniowy to: {result['broadcast_address']}\n"
-                                     f"Klasa sieci to: {result['ipv4_class']}")
+                                     f"Klasa sieci to: {result['ipv4_class']}\n"
+                                     f"Ilosc hostow w sieci to: {result['hosts']}")
     else:
         if not validate_ipv6(ipValue):
             result_label.config(text="Niepoprawny adkres ipv6")
@@ -105,7 +113,8 @@ def getResultIpV4(ipValue, maskValue):
     ipv4_result = {
         "broadcast_address": "",
         "network_address": "",
-        "ipv4_class": ""
+        "ipv4_class": "",
+        "hosts": ""
     }
 
     if get_ipv4_class(ipValue) != "Invalid IP address":
@@ -123,6 +132,8 @@ def getResultIpV4(ipValue, maskValue):
     binaryIpAddress = [bin(int(octet))[2:].zfill(8) for octet in intIpAddress]
     binaryMask = [bin(octet)[2:].zfill(8) for octet in maskIntArray]
 
+    hosts = getIpv4Hosts(binaryMask)
+
     for i in range(4):
         inverted_mask = 255 - int(binaryMask[i], 2)
         broadcast_octet = int(binaryIpAddress[i], 2) | inverted_mask
@@ -138,6 +149,7 @@ def getResultIpV4(ipValue, maskValue):
     ipv4_result["broadcast_address"] = decimal_broadcast_addressString
     ipv4_result["network_address"] = decimal_network_addressString
     ipv4_result["ipv4_class"] = ipv4Class
+    ipv4_result["hosts"] = hosts
     return ipv4_result
 
 
