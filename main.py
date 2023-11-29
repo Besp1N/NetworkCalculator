@@ -1,5 +1,6 @@
 # Kacper Karabinowski ETI II
 # Projekt Zaliczeniowy
+
 import subprocess
 import tkinter as tk
 from tkinter import font
@@ -39,11 +40,13 @@ tk.Label(root, width=15, height=8, bg="#7B68EE").grid(row=1, column=0)
  .grid(row=1, column=1))
 tk.Label(root, width=15, height=8, bg="#7B68EE").grid(row=1, column=2)
 tk.Label(root, width=15, height=8, bg="#fff").grid(row=1, column=3)
-button = Button(
-    frame, text='Zaczynajmy!', bg='#7B68EE',
-    fg='#fff', borderless=1, command=isStart, width=201, height=198,
-    activebackground='#8964D6')
-button.pack()
+# button = Button(
+#     frame, text='Zaczynajmy!', bg='#7B68EE',
+#     fg='#fff', borderless=1, command=isStart, width=201, height=198,
+#     activebackground='#8964D6')
+# button.pack()
+startButton = tk.Button(root, text='Zaczynajmy!', bg='#7B68EE', fg='#000', command=isStart, width=10, height=5)
+startButton.grid(row=1, column=4)
 tk.Label(root, width=15, height=8, bg="#fff").grid(row=1, column=5)
 
 tk.Label(root, width=15, height=8, bg="#7B68EE").grid(row=2, column=0)
